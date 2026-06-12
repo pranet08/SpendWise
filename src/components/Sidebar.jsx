@@ -5,7 +5,7 @@ import {
   FiHome,
   FiCreditCard,
   FiPieChart,
-  FiSliders,
+  FiAward,
   FiTarget,
   FiSettings,
   FiLogOut,
@@ -22,7 +22,7 @@ export const Sidebar = () => {
     { name: 'Dashboard', path: '/', icon: <FiHome className="w-4 h-4" /> },
     { name: 'Transactions', path: '/transactions', icon: <FiCreditCard className="w-4 h-4" /> },
     { name: 'Analytics', path: '/analytics', icon: <FiPieChart className="w-4 h-4" /> },
-    { name: 'Budget Planner', path: '/budget', icon: <FiSliders className="w-4 h-4" /> },
+    { name: 'Money Challenges', path: '/challenges', icon: <FiAward className="w-4 h-4" /> },
     { name: 'Savings Tracker', path: '/savings', icon: <FiTarget className="w-4 h-4" /> },
     { name: 'Settings', path: '/settings', icon: <FiSettings className="w-4 h-4" /> },
   ];

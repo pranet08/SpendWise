@@ -39,6 +39,7 @@ export const AppProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [geminiApiKey, setGeminiApiKey] = useState('');
   const [currency, setCurrency] = useState('₹');
+  const [challenges, setChallenges] = useState([]);
 
   // --- Toast helper functions ---
   const showToast = (message, type = 'success') => {
@@ -194,6 +195,10 @@ export const AppProvider = ({ children }) => {
       // 8. Currency Preference
       const savedCurrency = localStorage.getItem(`spendwise_currency_${email}`);
       setCurrency(savedCurrency || '₹');
+
+      // 9. Challenges
+      const savedChallenges = localStorage.getItem(`spendwise_challenges_${email}`);
+      setChallenges(savedChallenges ? JSON.parse(savedChallenges) : []);
     } else {
       setTransactions([]);
       setMonthlyBudget(30000);
@@ -203,6 +208,7 @@ export const AppProvider = ({ children }) => {
       setNotifications([]);
       setGeminiApiKey('');
       setCurrency('₹');
+      setChallenges([]);
     }
   }, [user]);
 
@@ -250,6 +256,12 @@ export const AppProvider = ({ children }) => {
       localStorage.setItem(`spendwise_currency_${user.email}`, currency);
     }
   }, [currency, user]);
+
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem(`spendwise_challenges_${user.email}`, JSON.stringify(challenges));
+    }
+  }, [challenges, user]);
 
   useEffect(() => {
     localStorage.setItem('spendwise_dark_mode', JSON.stringify(darkMode));
@@ -716,6 +728,7 @@ export const AppProvider = ({ children }) => {
     setGeminiApiKey('');
     setCurrency('₹');
     setDarkMode(true);
+    setChallenges([]);
     localStorage.clear();
     showToast('All system dashboard data cleared.', 'info');
   };
@@ -764,6 +777,8 @@ export const AppProvider = ({ children }) => {
         markNotificationAsRead,
         clearNotification,
         clearAllNotifications,
+        challenges,
+        setChallenges
       }}
     >
       {children}

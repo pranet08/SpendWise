@@ -27,8 +27,8 @@ export const Navbar = () => {
         return { title: 'Transactions', desc: 'Track and manage your transactions.' };
       case '/analytics':
         return { title: 'Analytics', desc: 'Understand your spending habits.' };
-      case '/budget':
-        return { title: 'Budget', desc: 'Stay within your monthly budget.' };
+      case '/challenges':
+        return { title: 'Money Challenges', desc: 'Complete gamified challenges to build healthy saving habits.' };
       case '/savings':
         return { title: 'Savings', desc: 'Monitor progress toward your savings goals.' };
       case '/settings':

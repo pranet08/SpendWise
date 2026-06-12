@@ -5,7 +5,7 @@ import { Signup } from './pages/Signup';
 import { Dashboard } from './pages/Dashboard';
 import { Transactions } from './pages/Transactions';
 import { Analytics } from './pages/Analytics';
-import { BudgetPlanner } from './pages/BudgetPlanner';
+import { MoneyChallenges } from './pages/MoneyChallenges';
 import { SavingsTracker } from './pages/SavingsTracker';
 import { Settings } from './pages/Settings';
 import { Sidebar } from './components/Sidebar';
@@ -42,7 +42,7 @@ function App() {
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/transactions" element={<Transactions />} />
                       <Route path="/analytics" element={<Analytics />} />
-                      <Route path="/budget" element={<BudgetPlanner />} />
+                      <Route path="/challenges" element={<MoneyChallenges />} />
                       <Route path="/savings" element={<SavingsTracker />} />
                       <Route path="/settings" element={<Settings />} />
                       

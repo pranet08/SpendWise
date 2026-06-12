@@ -96,12 +96,123 @@ export const SavingsTracker = () => {
     setIsDepositOpen(false);
   };
 
-  const getEstimatedCompletion = (g) => {
-    if (g.currentSaved >= g.targetAmount) return 'Goal Met!';
-    const remaining = g.targetAmount - g.currentSaved;
-    const months = Math.ceil(remaining / 3000);
-    if (months <= 1) return 'Within a month';
-    return `Estimated Completion: ${months} months`;
+  const getDeadlineFeedback = (deadlineDateStr) => {
+    if (!deadlineDateStr) return { formattedDate: 'No deadline', timeLeft: 'No deadline', isExpired: false, daysLeft: Infinity };
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const deadline = new Date(deadlineDateStr);
+    deadline.setHours(0, 0, 0, 0);
+    
+    const formattedDate = deadline.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+    
+    const diffTime = deadline - today;
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) {
+      const expiredDays = Math.abs(diffDays);
+      const expiredText = expiredDays === 1 ? 'Expired yesterday' : `Expired ${expiredDays} days ago`;
+      return {
+        formattedDate,
+        timeLeft: expiredText,
+        isExpired: true,
+        daysLeft: diffDays
+      };
+    }
+    
+    if (diffDays === 0) {
+      return {
+        formattedDate,
+        timeLeft: 'deadline today',
+        isExpired: false,
+        daysLeft: 0
+      };
+    }
+    
+    if (diffDays === 1) {
+      return {
+        formattedDate,
+        timeLeft: '1 day left',
+        isExpired: false,
+        daysLeft: 1
+      };
+    }
+
+    const getDaysInMonth = (year, month) => {
+      return new Date(year, month + 1, 0).getDate();
+    };
+    
+    let y1 = today.getFullYear();
+    let m1 = today.getMonth();
+    let d1 = today.getDate();
+    
+    let y2 = deadline.getFullYear();
+    let m2 = deadline.getMonth();
+    let d2 = deadline.getDate();
+    
+    let monthsDiff = (y2 - y1) * 12 + (m2 - m1);
+    let daysDiff = 0;
+    
+    if (d2 < d1) {
+      monthsDiff--;
+      let targetYear = y1;
+      let targetMonth = m1 + monthsDiff;
+      if (targetMonth > 11) {
+        targetYear += Math.floor(targetMonth / 12);
+        targetMonth = targetMonth % 12;
+      }
+      const maxDays = getDaysInMonth(targetYear, targetMonth);
+      const dayToUse = Math.min(d1, maxDays);
+      const temp = new Date(targetYear, targetMonth, dayToUse);
+      const diffMs = deadline - temp;
+      daysDiff = Math.round(diffMs / (1000 * 60 * 60 * 24));
+    } else {
+      daysDiff = d2 - d1;
+    }
+    
+    let timeLeft = '';
+    if (monthsDiff > 0) {
+      const monthWord = monthsDiff === 1 ? 'month' : 'months';
+      if (daysDiff > 0) {
+        const dayWord = daysDiff === 1 ? 'day' : 'days';
+        timeLeft = `${monthsDiff} ${monthWord} ${daysDiff} ${dayWord} left`;
+      } else {
+        timeLeft = `${monthsDiff} ${monthWord} left`;
+      }
+    } else {
+      timeLeft = `${daysDiff} days left`;
+    }
+    
+    return {
+      formattedDate,
+      timeLeft,
+      isExpired: false,
+      daysLeft: diffDays
+    };
+  };
+
+  const getGoalStatus = (g) => {
+    const isCompleted = g.currentSaved >= g.targetAmount;
+    if (isCompleted) {
+      return { label: 'Completed', color: 'bg-emerald-50 border-emerald-250 text-emerald-700 dark:bg-emerald-950/20 dark:border-emerald-900/40 dark:text-emerald-400' };
+    }
+    
+    const feedback = getDeadlineFeedback(g.deadline);
+    if (feedback.isExpired) {
+      return { label: 'Overdue', color: 'bg-rose-50 border-rose-250 text-rose-700 dark:bg-rose-950/20 dark:border-rose-900/40 dark:text-rose-400' };
+    }
+    
+    const pct = g.targetAmount > 0 ? (g.currentSaved / g.targetAmount) * 100 : 0;
+    if (pct < 50 && feedback.daysLeft < 30) {
+      return { label: 'Falling Behind', color: 'bg-orange-50 border-orange-250 text-orange-705 dark:bg-orange-950/20 dark:border-orange-900/40 dark:text-orange-400' };
+    }
+    
+    return { label: 'On Track', color: 'bg-blue-50 border-blue-250 text-blue-700 dark:bg-blue-950/20 dark:border-blue-900/40 dark:text-blue-400' };
   };
 
   return (
@@ -140,7 +251,7 @@ export const SavingsTracker = () => {
 
         {savingsGoals.length > 0 && (
           <div className="mt-4 space-y-1.5">
-            <div className="w-full h-2 bg-slate-100 dark:bg-slate-850 rounded-full overflow-hidden">
+            <div className="w-full h-2 bg-slate-100 dark:bg-slate-855 rounded-full overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full"
                 style={{ width: `${Math.min(overallProgress, 100)}%` }}
@@ -165,6 +276,8 @@ export const SavingsTracker = () => {
             const progress = g.targetAmount > 0 ? (g.currentSaved / g.targetAmount) * 100 : 0;
             const remaining = Math.max(0, g.targetAmount - g.currentSaved);
             const isCompleted = g.currentSaved >= g.targetAmount;
+            const feedback = getDeadlineFeedback(g.deadline);
+            const statusInfo = getGoalStatus(g);
 
             return (
               <div key={g.id} className="saas-card p-4 flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-800 transition-colors">
@@ -172,7 +285,12 @@ export const SavingsTracker = () => {
                 <div>
                   <div className="flex justify-between items-start gap-2">
                     <div>
-                      <h4 className="font-extrabold text-slate-900 dark:text-white text-xs truncate max-w-[145px]">{g.title}</h4>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h4 className="font-extrabold text-slate-900 dark:text-white text-xs truncate max-w-[145px]" title={g.title}>{g.title}</h4>
+                        <span className={`px-1.5 py-0.2 rounded text-[7px] font-bold uppercase border ${statusInfo.color}`}>
+                          {statusInfo.label}
+                        </span>
+                      </div>
                       <span className={`inline-block px-1.5 py-0.2 rounded text-[8px] font-bold uppercase mt-1.5 border ${
                         g.priority === 'high' ? 'bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-950/20 dark:border-rose-900/40 dark:text-rose-400' :
                         g.priority === 'medium' ? 'bg-orange-50 border-orange-200 text-orange-705 dark:bg-orange-950/20 dark:border-orange-900/40 dark:text-orange-400' :
@@ -192,7 +310,7 @@ export const SavingsTracker = () => {
                       </button>
                       <button
                         onClick={() => deleteSavingsGoal(g.id)}
-                        className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded transition-colors"
+                        className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-955/20 rounded transition-colors"
                         title="Delete"
                       >
                         <FiTrash2 className="w-3 h-3" />
@@ -229,33 +347,22 @@ export const SavingsTracker = () => {
                       </span>
                     </div>
                     <div>
-                      <span className="text-slate-400 dark:text-slate-500 block font-bold uppercase tracking-wider text-[8px]">Remaining</span>
-                      <span className="font-extrabold text-slate-900 dark:text-slate-100 text-[10.5px]">
-                        {currency}{remaining.toLocaleString('en-IN')}
+                      <span className="text-slate-400 dark:text-slate-500 block font-bold uppercase tracking-wider text-[8px]">Deadline</span>
+                      <span className="font-extrabold text-slate-900 dark:text-slate-100 text-[10px]">
+                        {feedback.formattedDate}
                       </span>
                     </div>
                     <div>
-                      <span className="text-slate-400 dark:text-slate-500 block font-bold uppercase tracking-wider text-[8px]">Completion</span>
-                      <span className="font-extrabold text-slate-900 dark:text-slate-100 text-[9.5px] truncate block">
-                        {getEstimatedCompletion(g).replace('Estimated Completion: ', '')}
+                      <span className="text-slate-400 dark:text-slate-500 block font-bold uppercase tracking-wider text-[8px]">Time Left</span>
+                      <span className={`font-extrabold text-[9.5px] truncate block ${feedback.isExpired ? 'text-rose-500' : 'text-slate-900 dark:text-slate-100'}`}>
+                        {feedback.timeLeft}
                       </span>
                     </div>
                   </div>
 
                 </div>
 
-                <div className="mt-4 pt-2.5 border-t border-slate-100 dark:border-slate-800/40 flex items-center justify-between gap-2 text-[9px] font-semibold text-slate-500">
-                  <div className="min-w-0">
-                    {g.deadline ? (
-                      <span className="text-slate-400 flex items-center gap-1 truncate text-[8.5px]">
-                        <FiCalendar className="w-3 h-3 text-slate-400 shrink-0" />
-                        {new Date(g.deadline).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                      </span>
-                    ) : (
-                      <span className="text-slate-400 italic text-[8.5px]">No deadline</span>
-                    )}
-                  </div>
-
+                <div className="mt-4 pt-2.5 border-t border-slate-100 dark:border-slate-800/40 flex items-center justify-end gap-2 text-[9px] font-semibold text-slate-550">
                   {!isCompleted && (
                     <button
                       onClick={() => handleOpenDeposit(g.id)}
