@@ -12,6 +12,7 @@ import { Sidebar } from './components/Sidebar';
 import { Navbar } from './components/Navbar';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { ToastNotification } from './components/Toast';
+import { BottomNav } from './components/BottomNav';
 
 function App() {
   return (
@@ -21,16 +22,13 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
-        {/* 2. Guarded Dashboard Application Routes
-            This catch-all path '/*' verifies authentication first. If validated, it returns
-            the responsive layout shell consisting of the Sidebar, Navbar, and inner sub-routes.
-        */}
+        {/* 2. Guarded Dashboard Application Routes */}
         <Route
           path="/*"
           element={
             <ProtectedRoute>
               <div className="flex h-screen w-screen overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors duration-200">
-                {/* Collapsible Sidebar */}
+                {/* Collapsible Sidebar (Desktops) */}
                 <Sidebar />
 
                 {/* Main Content Area */}
@@ -39,7 +37,7 @@ function App() {
                   <Navbar />
                   
                   {/* Dynamic Scrollable Body Content */}
-                  <main className="flex-1 overflow-y-auto p-4 md:p-6">
+                  <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 lg:pb-6">
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/transactions" element={<Transactions />} />
@@ -52,6 +50,9 @@ function App() {
                       <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
                   </main>
+
+                  {/* Mobile Bottom Navigation (Mobiles only) */}
+                  <BottomNav />
                 </div>
               </div>
             </ProtectedRoute>

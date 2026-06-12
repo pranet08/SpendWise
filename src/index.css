@@ -7,7 +7,6 @@
     @apply font-sans bg-slate-50 text-slate-900 transition-colors duration-200 antialiased;
   }
   
-  /* Smooth scrolling */
   html {
     scroll-behavior: smooth;
   }
@@ -20,8 +19,8 @@
 
 /* Scrollbar tweaks */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -33,40 +32,80 @@
   @apply bg-slate-300 dark:bg-slate-700;
 }
 
-/* Glassmorphism classes for sleek design card styling */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+/* Modern Minimal Border Panels (Linear/Stripe-like) */
+.saas-card {
+  @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-colors duration-200;
 }
 
-.dark .glass-panel {
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+/* Scrollbars inside lists */
+.thin-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 dark:bg-slate-800 rounded-full;
 }
 
-/* Purple/blue gradient animation helper */
-@keyframes pulseGlow {
-  0%, 100% {
-    opacity: 0.15;
+/* Print Stylesheet for Professional PDF Export */
+@media print {
+  /* Hide all interactive page chrome */
+  header,
+  aside,
+  nav,
+  button,
+  .no-print,
+  .mobile-bottom-nav,
+  .add-tx-fab,
+  select,
+  input,
+  form,
+  .actions-column,
+  .settings-sidebar,
+  .toast-container {
+    display: none !important;
   }
-  50% {
-    opacity: 0.3;
+
+  /* Force light mode background for clean paper printing */
+  body, html, #root, main, .print-container {
+    background: white !important;
+    color: black !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
   }
-}
 
-.gradient-glow {
-  position: relative;
-}
+  /* Expand content to full size */
+  main {
+    padding: 0 !important;
+  }
 
-.gradient-glow::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  background: linear-gradient(135deg, #a78bfa, #60a5fa);
-  border-radius: inherit;
-  z-index: -1;
-  opacity: 0.15;
-  filter: blur(8px);
+  /* Printable Report Grid */
+  #spendwise-print-report {
+    display: block !important;
+    visibility: visible !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    color: #0f172a !important;
+  }
+
+  .saas-card {
+    border: 1px solid #cbd5e1 !important;
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+
+  /* Force chart colors to print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Page break rules */
+  h1, h2, h3, .print-section {
+    page-break-inside: avoid;
+  }
 }

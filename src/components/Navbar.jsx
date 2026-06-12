@@ -1,10 +1,20 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { FiMenu, FiSun, FiMoon, FiBell, FiChevronDown, FiUser, FiInfo } from 'react-icons/fi';
+import { FiSun, FiMoon, FiBell, FiChevronDown, FiUser, FiInfo, FiX, FiCheck } from 'react-icons/fi';
 
 export const Navbar = () => {
-  const { user, darkMode, toggleDarkMode, setMobileSidebarOpen, transactions, monthlyBudget } = useApp();
+  const { 
+    user, 
+    darkMode, 
+    toggleDarkMode, 
+    notifications, 
+    markNotificationAsRead, 
+    clearNotification, 
+    clearAllNotifications,
+    currency
+  } = useApp();
+  
   const location = useLocation();
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -28,113 +38,52 @@ export const Navbar = () => {
     }
   };
 
-  // Compile notification items dynamically based on budget warnings and recent large spends
-  const getNotificationsList = () => {
-    const alerts = [];
-    const currentMonth = new Date().toISOString().substring(0, 7);
-
-    // Alert 1: Calculate total expenses this month
-    const totalExpenses = transactions
-      .filter((t) => t.type === 'expense' && t.date.startsWith(currentMonth))
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    if (totalExpenses > monthlyBudget) {
-      alerts.push({
-        id: 'warn-budget',
-        title: 'Budget Exceeded!',
-        desc: `You spent ₹${totalExpenses.toLocaleString('en-IN')} which exceeds your budget of ₹${monthlyBudget.toLocaleString('en-IN')}.`,
-        type: 'danger'
-      });
-    } else if (totalExpenses > monthlyBudget * 0.8) {
-      alerts.push({
-        id: 'warn-budget-near',
-        title: 'Approaching Budget Limit',
-        desc: `You spent 80%+ of your monthly budget. Current spend is ₹${totalExpenses.toLocaleString('en-IN')}.`,
-        type: 'warning'
-      });
-    }
-
-    // Alert 2: Check for any single transaction above ₹10,000
-    const largeSpends = transactions.filter((t) => t.type === 'expense' && t.amount >= 10000);
-    if (largeSpends.length > 0) {
-      alerts.push({
-        id: 'warn-large-spend',
-        title: 'Large Spend Detected',
-        desc: `Multiple high transactions (₹10,000+) are registered on your account.`,
-        type: 'info'
-      });
-    }
-
-    // Default placeholder notifications if list is empty
-    if (alerts.length === 0) {
-      alerts.push({
-        id: 'notify-welcome',
-        title: 'Welcome to Finova!',
-        desc: 'Explore your personal finance dashboard to start tracking budgets.',
-        type: 'info'
-      });
-    }
-
-    return alerts;
-  };
-
-  const notifications = getNotificationsList();
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between w-full h-[70px] px-6 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-900 transition-colors">
+    <header className="sticky top-0 z-30 flex items-center justify-between w-full h-14 px-4 bg-white/95 dark:bg-slate-950/95 backdrop-blur border-b border-slate-200 dark:border-slate-900 transition-colors">
       
-      {/* LEFT: Hamburger menu (Mobile) & Page Title (Desktop) */}
+      {/* LEFT: Page Title */}
       <div className="flex items-center gap-4">
-        {/* Mobile menu trigger button */}
-        <button
-          onClick={() => setMobileSidebarOpen(true)}
-          className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl lg:hidden focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-          aria-label="Open Sidebar Menu"
-        >
-          <FiMenu className="w-5 h-5" />
-        </button>
-
-        {/* Title */}
         <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white leading-none">
+          <h1 className="text-sm font-bold text-slate-900 dark:text-white leading-none">
             {getPageTitle()}
           </h1>
-          <p className="hidden md:block text-xs text-slate-500 mt-1">
+          <p className="hidden md:block text-[10px] text-slate-500 mt-0.5">
             Personal Finance Tracker
           </p>
         </div>
       </div>
 
-      {/* RIGHT: Actions (Theme Toggle, Notifications, User Info) */}
+      {/* RIGHT: Actions */}
       <div className="flex items-center gap-3">
         
-        {/* Theme Toggler (Light/Dark Mode) */}
+        {/* Theme Toggler */}
         <button
           onClick={toggleDarkMode}
-          className="p-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          className="p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg transition-all duration-150"
           title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
         >
-          {darkMode ? <FiSun className="w-5 h-5" /> : <FiMoon className="w-5 h-5" />}
+          {darkMode ? <FiSun className="w-4 h-4" /> : <FiMoon className="w-4 h-4" />}
         </button>
 
         {/* Notifications Icon with Popover */}
         <div className="relative">
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className="relative p-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-            title="Notifications panel"
+            className="relative p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg transition-all duration-150"
+            title="Notifications"
           >
-            <FiBell className="w-5 h-5" />
-            {/* Red badge dot if we have important notices */}
-            {notifications.length > 0 && (
-              <span className="absolute top-2 right-2.5 flex h-2 w-2">
+            <FiBell className="w-4 h-4" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 flex h-1.5 w-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-rose-500"></span>
               </span>
             )}
           </button>
 
-          {/* Notifications Dropdown Card */}
+          {/* Notifications Dropdown Panel */}
           {showNotifications && (
             <>
               {/* Overlay Backdrop to click-out */}
@@ -142,36 +91,76 @@ export const Navbar = () => {
                 className="fixed inset-0 z-40" 
                 onClick={() => setShowNotifications(false)}
               />
-              <div className="absolute right-0 mt-2.5 w-80 md:w-96 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
-                <div className="p-4 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
-                  <h3 className="font-semibold text-slate-900 dark:text-white text-sm">Notifications</h3>
-                  <span className="text-[10px] bg-brand-100 dark:bg-brand-950 text-brand-600 dark:text-brand-400 px-2 py-0.5 rounded-full font-bold">
-                    {notifications.length} Active
-                  </span>
-                </div>
-                <div className="max-h-[300px] overflow-y-auto">
-                  {notifications.map((note) => (
-                    <div 
-                      key={note.id} 
-                      className="p-4 flex gap-3 items-start hover:bg-slate-50 dark:hover:bg-slate-950 transition-colors"
+              <div className="absolute right-0 mt-2 w-72 md:w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-lg z-50 overflow-hidden divide-y divide-slate-150 dark:divide-slate-850">
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
+                  <h3 className="font-semibold text-slate-900 dark:text-white text-xs">Alerts & Messages</h3>
+                  {notifications.length > 0 && (
+                    <button 
+                      onClick={() => {
+                        clearAllNotifications();
+                        setShowNotifications(false);
+                      }}
+                      className="text-[9px] font-bold text-rose-600 dark:text-rose-400 hover:underline"
                     >
-                      <div className={`mt-0.5 shrink-0 p-1.5 rounded-lg ${
-                        note.type === 'danger' ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400' :
-                        note.type === 'warning' ? 'bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400' :
-                        'bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400'
-                      }`}>
-                        {note.type === 'danger' ? <FiInfo className="w-4 h-4" /> : <FiInfo className="w-4 h-4" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-slate-950 dark:text-slate-50">
-                          {note.title}
-                        </p>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-normal">
-                          {note.desc}
-                        </p>
-                      </div>
+                      Clear All
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-60 overflow-y-auto thin-scrollbar">
+                  {notifications.length === 0 ? (
+                    <div className="p-4 text-center text-[11px] text-slate-500">
+                      No notifications at the moment.
                     </div>
-                  ))}
+                  ) : (
+                    notifications.map((note) => (
+                      <div 
+                        key={note.id} 
+                        className={`p-3 flex gap-2 items-start hover:bg-slate-50 dark:hover:bg-slate-950 transition-colors ${
+                          !note.read ? 'bg-slate-50/50 dark:bg-slate-900/30' : ''
+                        }`}
+                      >
+                        <div className={`mt-0.5 shrink-0 p-1 rounded-md ${
+                          note.type === 'danger' ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:text-rose-455' :
+                          note.type === 'warning' ? 'bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-455' :
+                          note.type === 'success' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-455' :
+                          'bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-455'
+                        }`}>
+                          <FiInfo className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <p className="text-[11px] font-bold text-slate-950 dark:text-slate-50 leading-tight">
+                              {note.title}
+                            </p>
+                            <div className="flex items-center gap-1">
+                              {!note.read && (
+                                <button
+                                  onClick={() => markNotificationAsRead(note.id)}
+                                  className="text-[10px] text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400"
+                                  title="Mark as read"
+                                >
+                                  <FiCheck className="w-3 h-3" />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => clearNotification(note.id)}
+                                className="text-[10px] text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"
+                                title="Dismiss"
+                              >
+                                <FiX className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-normal">
+                            {note.desc}
+                          </p>
+                          <span className="text-[8px] text-slate-400 block mt-1">
+                            {new Date(note.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </>
@@ -179,17 +168,17 @@ export const Navbar = () => {
         </div>
 
         {/* Vertical divider */}
-        <div className="h-6 w-px bg-slate-200 dark:bg-slate-800" />
+        <div className="h-4 w-px bg-slate-200 dark:bg-slate-800" />
 
         {/* User profile indicator */}
         {user && (
-          <div className="flex items-center gap-2 pl-1 select-none">
+          <div className="flex items-center gap-2 select-none">
             <img
               src={user.avatar}
               alt={user.name}
-              className="w-8 h-8 rounded-xl object-cover ring-2 ring-brand-100 dark:ring-brand-950"
+              className="w-6 h-6 rounded-md object-cover ring-1 ring-slate-200 dark:ring-slate-800"
             />
-            <span className="hidden md:block text-xs font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[100px]">
+            <span className="hidden md:block text-[11px] font-semibold text-slate-700 dark:text-slate-350 truncate max-w-[80px]">
               {user.name}
             </span>
           </div>
@@ -198,3 +187,4 @@ export const Navbar = () => {
     </header>
   );
 };
+export default Navbar;

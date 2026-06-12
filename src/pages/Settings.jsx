@@ -1,49 +1,154 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useApp } from '../context/AppContext';
-import { FiUser, FiMail, FiTrash2, FiRefreshCw, FiSmile } from 'react-icons/fi';
+import { 
+  FiUser, 
+  FiMail, 
+  FiTrash2, 
+  FiRefreshCw, 
+  FiKey, 
+  FiDollarSign, 
+  FiDownloadCloud, 
+  FiUploadCloud,
+  FiLink
+} from 'react-icons/fi';
 
 export const Settings = () => {
-  const { user, updateProfile, resetAllData, showToast } = useApp();
+  const { 
+    user, 
+    updateProfile, 
+    resetAllData, 
+    geminiApiKey, 
+    setGeminiApiKey,
+    currency,
+    setCurrency,
+    transactions,
+    monthlyBudget,
+    savingsGoals,
+    recurringTransactions,
+    activities,
+    notifications,
+    showToast 
+  } = useApp();
+
+  const fileInputRef = useRef(null);
 
   // Local form states
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
-  
-  // Available pre-defined avatars for the user to choose
+  const [apiKeyInput, setApiKeyInput] = useState(geminiApiKey);
+
+  // Available avatars
   const avatarOptions = [
-    { id: 'av-1', url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80' }, // Male Professional
-    { id: 'av-2', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80' }, // Female Professional
-    { id: 'av-3', url: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80' }, // Male Tech
-    { id: 'av-4', url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80' }  // Female Tech
+    { id: 'av-1', url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80' },
+    { id: 'av-2', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80' },
+    { id: 'av-3', url: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80' },
+    { id: 'av-4', url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80' }
   ];
 
   const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar || avatarOptions[0].url);
 
-  // Save profile changes
+  // Save profile settings
   const handleSaveProfile = (e) => {
     e.preventDefault();
     if (!name.trim() || !email.trim()) {
       showToast('Name and Email cannot be empty.', 'error');
       return;
     }
-
-    // Call update profile in AppContext with the name, email, and selected avatar URL
     updateProfile(name.trim(), email.trim(), selectedAvatar);
   };
 
-  const handleSelectAvatar = (url) => {
-    setSelectedAvatar(url);
-    showToast('Avatar selected. Save profile changes to apply.', 'info');
+  // Save Gemini Key
+  const handleSaveApiKey = (e) => {
+    e.preventDefault();
+    setGeminiApiKey(apiKeyInput.trim());
+    showToast('Gemini API Key updated successfully.', 'success');
   };
 
-  // Reset system
-  const handleResetData = () => {
-    // Standard beginner confirmation prompt
-    const confirmWipe = window.confirm(
-      'WARNING: This will delete all your local transactions, budgets, savings goals, and sign you out. Are you sure you want to proceed?'
-    );
+  // JSON Data Backup Export Helper
+  const handleExportBackup = () => {
+    const backupData = {
+      transactions,
+      monthlyBudget,
+      savingsGoals,
+      recurringTransactions,
+      activities,
+      notifications,
+      currency,
+      exportedAt: new Date().toISOString()
+    };
 
+    const dataStr = JSON.stringify(backupData, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `spendwise_backup_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('Backup JSON downloaded successfully.', 'success');
+  };
+
+  // JSON Data Backup Import / Restore Helper
+  const handleImportBackup = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const parsedData = JSON.parse(event.target.result);
+        
+        // Simple validation check to ensure key fields exist in parsed JSON
+        if (
+          !Array.isArray(parsedData.transactions) || 
+          typeof parsedData.monthlyBudget !== 'number' ||
+          !Array.isArray(parsedData.savingsGoals)
+        ) {
+          throw new Error('Invalid backup schema. Required data arrays are missing.');
+        }
+
+        // Restore into local storage under user scope
+        const emailKey = user.email;
+        localStorage.setItem(`spendwise_transactions_${emailKey}`, JSON.stringify(parsedData.transactions));
+        localStorage.setItem(`spendwise_budget_${emailKey}`, parsedData.monthlyBudget.toString());
+        localStorage.setItem(`spendwise_savings_goals_${emailKey}`, JSON.stringify(parsedData.savingsGoals));
+        if (parsedData.recurringTransactions) {
+          localStorage.setItem(`spendwise_recurring_${emailKey}`, JSON.stringify(parsedData.recurringTransactions));
+        }
+        if (parsedData.activities) {
+          localStorage.setItem(`spendwise_activities_${emailKey}`, JSON.stringify(parsedData.activities));
+        }
+        if (parsedData.notifications) {
+          localStorage.setItem(`spendwise_notifications_${emailKey}`, JSON.stringify(parsedData.notifications));
+        }
+        if (parsedData.currency) {
+          localStorage.setItem(`spendwise_currency_${emailKey}`, parsedData.currency);
+        }
+
+        showToast('Backup data imported successfully. Reloading view...', 'success');
+        
+        // Reload page to re-run providers and sync state
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+
+      } catch (err) {
+        showToast(`Import failed: ${err.message}`, 'error');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleResetData = () => {
+    const confirmWipe = window.confirm(
+      'WARNING: This will delete all your local transactions, budgets, goals, and sign you out. Are you sure you want to proceed?'
+    );
     if (confirmWipe) {
       resetAllData();
     }
@@ -53,47 +158,45 @@ export const Settings = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="space-y-6"
+      className="space-y-5"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         
-        {/* PROFILE INFORMATION DETAILS CARD */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2.5 bg-brand-100 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 rounded-xl">
-              <FiUser className="w-5 h-5" />
+        {/* Profile Details */}
+        <div className="saas-card p-5 lg:col-span-2">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg">
+              <FiUser className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 dark:text-white">Profile Settings</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Update your personal account profile details.</p>
+              <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Profile Settings</h3>
+              <p className="text-[10px] text-slate-500 mt-0.5">Manage your personal profile information</p>
             </div>
           </div>
 
           <form onSubmit={handleSaveProfile} className="space-y-4">
             
-            {/* AVATAR CHOOSER SELECTOR */}
-            <div className="space-y-3 pb-2">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            {/* Avatar picker */}
+            <div className="space-y-2">
+              <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">
                 Choose Profile Photo
               </label>
               <div className="flex items-center gap-4">
-                {/* Active Avatar */}
                 <img
                   src={selectedAvatar}
                   alt="Chosen Avatar"
-                  className="w-16 h-16 rounded-2xl object-cover ring-4 ring-brand-500/20"
+                  className="w-12 h-12 rounded-xl object-cover ring-2 ring-slate-200 dark:ring-slate-800"
                 />
                 
-                {/* Available Avatars selection grid */}
                 <div className="flex gap-2">
                   {avatarOptions.map((av) => (
                     <button
                       key={av.id}
                       type="button"
-                      onClick={() => handleSelectAvatar(av.url)}
-                      className={`relative w-10 h-10 rounded-xl overflow-hidden border-2 transition-all duration-200 ${
+                      onClick={() => { setSelectedAvatar(av.url); showToast('Avatar selected.', 'info'); }}
+                      className={`relative w-8 h-8 rounded-lg overflow-hidden border-2 transition-all ${
                         selectedAvatar === av.url 
-                          ? 'border-brand-500 scale-105 shadow-sm' 
+                          ? 'border-slate-800 dark:border-white scale-105 shadow-sm' 
                           : 'border-transparent hover:scale-105'
                       }`}
                     >
@@ -104,75 +207,207 @@ export const Settings = () => {
               </div>
             </div>
 
-            {/* User Name Input */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                Full Name
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <FiUser className="w-4 h-4" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <FiUser className="w-3.5 h-3.5" />
+                  </div>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  />
                 </div>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                />
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <FiMail className="w-3.5 h-3.5" />
+                  </div>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Email Input */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <FiMail className="w-4 h-4" />
-                </div>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                />
-              </div>
-            </div>
-
-            {/* Submit changes button */}
             <button
               type="submit"
-              className="px-5 py-2.5 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold shadow hover:shadow-md transition-all duration-200"
+              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 rounded-lg text-[10px] font-bold uppercase shadow transition-colors"
             >
               Save Profile Changes
             </button>
           </form>
         </div>
 
-        {/* SYSTEM CONTROL DANGER WIPE CARD */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2.5 bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-455 rounded-xl">
-                <FiTrash2 className="w-5 h-5" />
-              </div>
-              <h3 className="font-bold text-slate-900 dark:text-white">Danger Zone</h3>
+        {/* Global Currency & settings Card */}
+        <div className="saas-card p-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg">
+              <FiDollarSign className="w-4 h-4" />
             </div>
-            <p className="text-xs text-slate-500 leading-relaxed mb-6">
-              Permanently delete all your local transactions, budgets, savings goals, and sign out of your account.
+            <div>
+              <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Preferences</h3>
+              <p className="text-[10px] text-slate-500 mt-0.5">Adjust dashboard formatting rules</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                Base Currency Symbol
+              </label>
+              <select
+                value={currency}
+                onChange={(e) => { setCurrency(e.target.value); showToast(`Currency updated to ${e.target.value}`, 'success'); }}
+                className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-250 dark:border-slate-800 rounded-lg text-xs focus:outline-none"
+              >
+                <option value="₹">₹ (Indian Rupee - INR)</option>
+                <option value="$">$ (US Dollar - USD)</option>
+                <option value="€">€ (Euro - EUR)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        
+        {/* Gemini AI Settings Card */}
+        <div className="saas-card p-5 lg:col-span-2">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg">
+              <FiKey className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Gemini API Key</h3>
+              <p className="text-[10px] text-slate-500 mt-0.5">Integrate Google Gemini API to explain calculated metrics</p>
+            </div>
+          </div>
+
+          <form onSubmit={handleSaveApiKey} className="space-y-4">
+            <div>
+              <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                API Developer Key
+              </label>
+              <input
+                type="password"
+                value={apiKeyInput}
+                onChange={(e) => setApiKeyInput(e.target.value)}
+                placeholder="AIzaSy..."
+                className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
+              <p className="text-[9px] text-slate-455 mt-1">
+                Your key is stored securely in your browser's local storage and is sent only directly to the Google API endpoint.
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 rounded-lg text-[10px] font-bold uppercase shadow transition-colors"
+            >
+              Update Gemini Key
+            </button>
+          </form>
+        </div>
+
+        {/* Data Backup & Migration Center */}
+        <div className="saas-card p-5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg">
+                <FiDownloadCloud className="w-4 h-4" />
+              </div>
+              <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Ledger Migration</h3>
+            </div>
+            <p className="text-[10px] text-slate-500 leading-normal mb-4">
+              Backup your entire SpendWise dashboard ledger to a local JSON file, or restore from a previous backup.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 mt-4">
+            <button
+              onClick={handleExportBackup}
+              className="flex items-center justify-center gap-1.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100 rounded text-[9px] font-bold uppercase transition-colors"
+            >
+              <FiDownloadCloud className="w-3.5 h-3.5" />
+              Backup
+            </button>
+            <button
+              onClick={triggerFileInput}
+              className="flex items-center justify-center gap-1.5 py-1.5 bg-slate-150 hover:bg-slate-200 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100 rounded text-[9px] font-bold uppercase transition-colors"
+            >
+              <FiUploadCloud className="w-3.5 h-3.5" />
+              Restore
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImportBackup}
+              accept=".json"
+              className="hidden"
+            />
+          </div>
+        </div>
+
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        
+        {/* Danger zone wipe */}
+        <div className="saas-card p-5 lg:col-span-2 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-455 rounded-lg">
+                <FiTrash2 className="w-4 h-4" />
+              </div>
+              <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Danger Zone</h3>
+            </div>
+            <p className="text-[10px] text-slate-500 leading-relaxed">
+              Permanently wipe all records, budgets, savings progress, and settings. This operation is non-reversible.
             </p>
           </div>
 
           <button
-            type="button"
             onClick={handleResetData}
-            className="w-full py-2.5 border border-rose-250 dark:border-rose-900/60 hover:bg-rose-600 dark:hover:bg-rose-900/40 hover:text-white text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center gap-2"
+            className="w-full mt-4 py-2 border border-rose-250 hover:bg-rose-600 hover:text-white text-rose-600 dark:text-rose-400 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1.5"
           >
             <FiRefreshCw className="w-3.5 h-3.5" />
-            Reset System Data
+            Reset Data Cache
           </button>
         </div>
+
+        {/* Future banking sync Placeholder */}
+        <div className="saas-card p-5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-lg">
+                <FiLink className="w-4 h-4" />
+              </div>
+              <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Bank account sync</h3>
+            </div>
+            <p className="text-[10px] text-slate-500 leading-normal">
+              Sync transactions automatically with open banking integrations.
+            </p>
+          </div>
+
+          <span className="w-full mt-4 py-1.5 bg-slate-100 dark:bg-slate-850 text-slate-400 rounded text-center text-[9px] font-extrabold uppercase select-none cursor-not-allowed">
+            Coming Soon (Open Banking)
+          </span>
+        </div>
+
       </div>
     </motion.div>
   );

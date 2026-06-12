@@ -4,7 +4,14 @@ import { FiX } from 'react-icons/fi';
 import { useApp } from '../context/AppContext';
 
 export const TransactionModal = ({ isOpen, onClose, editId = null }) => {
-  const { addTransaction, editTransaction, transactions, showToast } = useApp();
+  const { 
+    addTransaction, 
+    editTransaction, 
+    addRecurringTransaction,
+    transactions, 
+    currency,
+    showToast 
+  } = useApp();
 
   // Define categories and payment methods
   const categories = ['Food', 'Shopping', 'Travel', 'Bills', 'Entertainment', 'Education', 'Salary'];
@@ -18,6 +25,8 @@ export const TransactionModal = ({ isOpen, onClose, editId = null }) => {
   const [date, setDate] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('UPI');
   const [notes, setNotes] = useState('');
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrence, setRecurrence] = useState('Monthly');
 
   // Validation error state
   const [errors, setErrors] = useState({});
@@ -28,19 +37,19 @@ export const TransactionModal = ({ isOpen, onClose, editId = null }) => {
     setAmount('');
     setType('expense');
     setCategory('Food');
-    // Set date default to today in YYYY-MM-DD
     const today = new Date().toISOString().split('T')[0];
     setDate(today);
     setPaymentMethod('UPI');
     setNotes('');
+    setIsRecurring(false);
+    setRecurrence('Monthly');
     setErrors({});
   };
 
-  // Run when modal opens or when editing ID changes
+  // Run when modal opens or editing ID changes
   useEffect(() => {
     if (isOpen) {
       if (editId) {
-        // Load details of the transaction we wish to edit
         const txToEdit = transactions.find((t) => t.id === editId);
         if (txToEdit) {
           setTitle(txToEdit.title);
@@ -50,6 +59,8 @@ export const TransactionModal = ({ isOpen, onClose, editId = null }) => {
           setDate(txToEdit.date);
           setPaymentMethod(txToEdit.paymentMethod);
           setNotes(txToEdit.notes || '');
+          setIsRecurring(txToEdit.isRecurring || false);
+          setRecurrence('Monthly');
         }
       } else {
         resetForm();
@@ -61,7 +72,7 @@ export const TransactionModal = ({ isOpen, onClose, editId = null }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Perform basic validation checks
+    // Validation
     const formErrors = {};
     if (!title.trim()) formErrors.title = 'Title is required';
     if (!amount || Number(amount) <= 0) formErrors.amount = 'Amount must be greater than 0';
@@ -80,20 +91,48 @@ export const TransactionModal = ({ isOpen, onClose, editId = null }) => {
       category,
       date,
       paymentMethod,
-      notes: notes.trim()
+      notes: notes.trim(),
+      isRecurring
     };
 
     if (editId) {
       editTransaction(editId, txData);
     } else {
+      // Add transaction entry
       addTransaction(txData);
+
+      // If user toggled recurring, create the template as well
+      if (isRecurring) {
+        // Calculate the next due date based on chosen interval starting from chosen date
+        const baseDate = new Date(date);
+        if (recurrence === 'Daily') {
+          baseDate.setDate(baseDate.getDate() + 1);
+        } else if (recurrence === 'Weekly') {
+          baseDate.setDate(baseDate.getDate() + 7);
+        } else if (recurrence === 'Monthly') {
+          baseDate.setMonth(baseDate.getMonth() + 1);
+        } else if (recurrence === 'Yearly') {
+          baseDate.setFullYear(baseDate.getFullYear() + 1);
+        }
+        const nextDueDateStr = baseDate.toISOString().split('T')[0];
+
+        const recurringTemplate = {
+          title: title.trim(),
+          amount: Number(amount),
+          type,
+          category,
+          recurrence,
+          paymentMethod,
+          notes: notes.trim(),
+          nextDueDate: nextDueDateStr
+        };
+        addRecurringTransaction(recurringTemplate);
+      }
     }
 
-    onClose(); // Close the modal
+    onClose();
   };
 
-  // Auto-adjust categories when type changes
-  // E.g. If selecting 'Income', default category to 'Salary'
   const handleTypeChange = (selectedType) => {
     setType(selectedType);
     if (selectedType === 'income') {
@@ -107,48 +146,48 @@ export const TransactionModal = ({ isOpen, onClose, editId = null }) => {
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Modal Backdrop overlay */}
+          {/* Modal Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto"
           >
-            {/* Modal Dialog Card */}
+            {/* Modal Card */}
             <motion.div
-              initial={{ scale: 0.95, y: 20, opacity: 0 }}
+              initial={{ scale: 0.95, y: 15, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.95, y: 20, opacity: 0 }}
-              transition={{ type: 'spring', duration: 0.5 }}
-              onClick={(e) => e.stopPropagation()} // Prevent backdrop click close from inside card
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden"
+              exit={{ scale: 0.95, y: 15, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-md rounded-xl shadow-xl overflow-hidden"
             >
-              {/* Header Title */}
-              <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                  {editId ? 'Edit Transaction' : 'Add New Transaction'}
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800">
+                <h3 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
+                  {editId ? 'Modify Ledger Item' : 'New Transaction'}
                 </h3>
                 <button
                   onClick={onClose}
-                  className="p-1.5 text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                  className="p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
                 >
-                  <FiX className="w-5 h-5" />
+                  <FiX className="w-4 h-4" />
                 </button>
               </div>
 
               {/* Form Content */}
-              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <form onSubmit={handleSubmit} className="p-5 space-y-3.5">
                 
-                {/* 1. Transaction Type Toggle (Income vs Expense) */}
-                <div className="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-xl">
+                {/* 1. Transaction Type Selector */}
+                <div className="flex bg-slate-50 dark:bg-slate-950 p-0.5 rounded-lg border border-slate-200 dark:border-slate-800">
                   <button
                     type="button"
                     onClick={() => handleTypeChange('expense')}
-                    className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                    className={`flex-1 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${
                       type === 'expense'
-                        ? 'bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-400 shadow'
-                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                        ? 'bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-455 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-700'
                     }`}
                   >
                     Expense
@@ -156,89 +195,80 @@ export const TransactionModal = ({ isOpen, onClose, editId = null }) => {
                   <button
                     type="button"
                     onClick={() => handleTypeChange('income')}
-                    className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                    className={`flex-1 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${
                       type === 'income'
-                        ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow'
-                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                        ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-455 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-700'
                     }`}
                   >
                     Income
                   </button>
                 </div>
 
-                {/* 2. Title Input */}
+                {/* 2. Title */}
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                    Title
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                    Description Title
                   </label>
                   <input
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. Coffee / Freelance bonus"
-                    className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 dark:focus:border-brand-400 ${
+                    placeholder="e.g. Amazon Cloud / Weekly Groceries"
+                    className={`w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border rounded-lg text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-1 focus:ring-brand-500 ${
                       errors.title ? 'border-rose-500' : 'border-slate-200 dark:border-slate-800'
                     }`}
                   />
-                  {errors.title && <p className="text-xs text-rose-500 mt-1">{errors.title}</p>}
+                  {errors.title && <p className="text-[9px] text-rose-500 mt-1">{errors.title}</p>}
                 </div>
 
-                {/* 3. Grid for Amount and Date */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Amount Input */}
+                {/* 3. Amount & Date */}
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                      Amount (₹)
+                    <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                      Amount ({currency})
                     </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 font-semibold text-sm">
-                        ₹
-                      </div>
-                      <input
-                        type="number"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        placeholder="0.00"
-                        min="0"
-                        step="any"
-                        className={`w-full pl-9 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950 border rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 dark:focus:border-brand-400 ${
-                          errors.amount ? 'border-rose-500' : 'border-slate-200 dark:border-slate-800'
-                        }`}
-                      />
-                    </div>
-                    {errors.amount && <p className="text-xs text-rose-500 mt-1">{errors.amount}</p>}
+                    <input
+                      type="number"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder="0.00"
+                      min="0"
+                      step="any"
+                      className={`w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border rounded-lg text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-1 focus:ring-brand-500 ${
+                        errors.amount ? 'border-rose-500' : 'border-slate-200 dark:border-slate-800'
+                      }`}
+                    />
+                    {errors.amount && <p className="text-[9px] text-rose-500 mt-1">{errors.amount}</p>}
                   </div>
 
-                  {/* Date Input */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                      Date
+                    <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                      Billing Date
                     </label>
                     <input
                       type="date"
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
-                      className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 dark:focus:border-brand-400 ${
+                      className={`w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border rounded-lg text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-1 focus:ring-brand-500 ${
                         errors.date ? 'border-rose-500' : 'border-slate-200 dark:border-slate-800'
                       }`}
                     />
-                    {errors.date && <p className="text-xs text-rose-500 mt-1">{errors.date}</p>}
+                    {errors.date && <p className="text-[9px] text-rose-500 mt-1">{errors.date}</p>}
                   </div>
                 </div>
 
-                {/* 4. Grid for Category & Payment Method */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Category Dropdown */}
+                {/* 4. Category & Payment Method */}
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                      Category
+                    <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                      Category Tag
                     </label>
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white text-xs focus:outline-none"
                     >
-                      {/* If type is income, we might want to restrict categories, but showing all is simpler and cleaner for learning */}
                       {categories.map((cat) => (
                         <option key={cat} value={cat}>
                           {cat}
@@ -247,15 +277,14 @@ export const TransactionModal = ({ isOpen, onClose, editId = null }) => {
                     </select>
                   </div>
 
-                  {/* Payment Method Dropdown */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                      Payment Method
+                    <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                      Payment Account
                     </label>
                     <select
                       value={paymentMethod}
                       onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white text-xs focus:outline-none"
                     >
                       {paymentMethods.map((pm) => (
                         <option key={pm} value={pm}>
@@ -266,34 +295,66 @@ export const TransactionModal = ({ isOpen, onClose, editId = null }) => {
                   </div>
                 </div>
 
-                {/* 5. Notes Input */}
+                {/* 5. Recurring Option (Only display when adding new transaction) */}
+                {!editId && (
+                  <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold text-slate-700 dark:text-slate-350 uppercase">
+                        Recurring Billing
+                      </label>
+                      <input
+                        type="checkbox"
+                        checked={isRecurring}
+                        onChange={(e) => setIsRecurring(e.target.checked)}
+                        className="rounded border-slate-300 text-brand-655 focus:ring-brand-500 h-4 w-4"
+                      />
+                    </div>
+                    {isRecurring && (
+                      <div className="grid grid-cols-2 gap-3 items-center pt-1.5 border-t border-slate-200 dark:border-slate-900">
+                        <span className="text-[9px] text-slate-455 font-bold uppercase">Billing Cycle</span>
+                        <select
+                          value={recurrence}
+                          onChange={(e) => setRecurrence(e.target.value)}
+                          className="px-2 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded text-[10px] focus:outline-none"
+                        >
+                          <option value="Daily">Daily</option>
+                          <option value="Weekly">Weekly</option>
+                          <option value="Monthly">Monthly</option>
+                          <option value="Yearly">Yearly</option>
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 6. Notes */}
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                    Notes (Optional)
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                    Remarks Notes (Optional)
                   </label>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Add extra remarks..."
-                    rows="3"
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 dark:focus:border-brand-400 resize-none"
+                    placeholder="Reference logs..."
+                    rows="2"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white text-xs focus:outline-none resize-none"
                   />
                 </div>
 
-                {/* Footer Buttons */}
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                {/* Buttons */}
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                   <button
                     type="button"
                     onClick={onClose}
-                    className="px-5 py-2.5 border border-slate-200 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-950 rounded-xl text-slate-700 dark:text-slate-350 text-sm font-semibold transition-colors"
+                    className="px-4 py-2 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-950 rounded-lg text-[10px] font-bold uppercase text-slate-550 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2.5 bg-gradient-to-r from-brand-600 to-indigo-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-brand-500/10 hover:shadow-lg transition-all"
+                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 rounded-lg text-[10px] font-bold uppercase shadow transition-colors"
                   >
-                    {editId ? 'Save Changes' : 'Add Transaction'}
+                    {editId ? 'Save Edits' : 'Commit Entry'}
                   </button>
                 </div>
               </form>
@@ -304,3 +365,4 @@ export const TransactionModal = ({ isOpen, onClose, editId = null }) => {
     </AnimatePresence>
   );
 };
+export default TransactionModal;

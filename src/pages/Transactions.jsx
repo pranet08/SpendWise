@@ -10,22 +10,29 @@ import {
   FiPlus,
   FiChevronLeft,
   FiChevronRight,
-  FiTrendingUp,
-  FiTrendingDown,
-  FiTag
+  FiDownload,
+  FiPrinter,
+  FiRepeat,
+  FiTag,
+  FiCalendar
 } from 'react-icons/fi';
 
 export const Transactions = () => {
-  const { transactions, deleteTransaction } = useApp();
+  const { 
+    transactions, 
+    deleteTransaction, 
+    calculateFinancialHealth, 
+    currency 
+  } = useApp();
 
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedType, setSelectedType] = useState('All');
 
-  // Simple Pagination state (8 records per page)
+  // Simple Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  const itemsPerPage = 10;
 
   // Modal control state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -34,24 +41,16 @@ export const Transactions = () => {
   // Available categories
   const categories = ['All', 'Food', 'Shopping', 'Travel', 'Bills', 'Entertainment', 'Education', 'Salary'];
 
-  // 1. FILTER LOGIC (Simple and readable)
+  // FILTER LOGIC
   const filteredTxs = transactions.filter((tx) => {
-    // Search Term match (case-insensitive substring check, no complex fuzzy logic)
     const matchesSearch = tx.title.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    // Category match
     const matchesCategory = selectedCategory === 'All' || tx.category === selectedCategory;
-
-    // Type match (income vs expense)
     const matchesType = selectedType === 'All' || tx.type === selectedType;
-
     return matchesSearch && matchesCategory && matchesType;
   });
 
-  // 2. PAGINATION CALCULATIONS
+  // PAGINATION CALCULATIONS
   const totalPages = Math.ceil(filteredTxs.length / itemsPerPage);
-  
-  // Slice array to get only current page items
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedTxs = filteredTxs.slice(startIndex, startIndex + itemsPerPage);
 
@@ -65,70 +64,119 @@ export const Transactions = () => {
     setIsModalOpen(true);
   };
 
-  // Reset pagination page to 1 when filters change
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
+  // CSV EXPORT HELPER
+  const exportToCSV = () => {
+    if (transactions.length === 0) {
+      showToast('No transaction data to export.', 'error');
+      return;
+    }
+    const headers = ['ID', 'Title', 'Amount', 'Type', 'Category', 'Date', 'Payment Method', 'Recurring', 'Notes'];
+    const csvRows = [
+      headers.join(','),
+      ...transactions.map((tx) =>
+        [
+          tx.id,
+          `"${tx.title.replace(/"/g, '""')}"`,
+          tx.amount,
+          tx.type,
+          tx.category,
+          tx.date,
+          tx.paymentMethod,
+          tx.isRecurring ? 'Yes' : 'No',
+          `"${(tx.notes || '').replace(/"/g, '""')}"`,
+        ].join(',')
+      ),
+    ];
+
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `spendwise_transactions_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  const handleCategoryChange = (e) => {
-    setSelectedCategory(e.target.value);
-    setCurrentPage(1);
+  // PDF PRINT TRIGGER
+  const exportToPDF = () => {
+    window.print();
   };
 
-  const handleTypeChange = (type) => {
-    setSelectedType(type);
-    setCurrentPage(1);
-  };
+  // Compile statistics for PDF printable report
+  const currentMonth = new Date().toISOString().substring(0, 7);
+  const currentMonthName = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+  const health = calculateFinancialHealth();
+  const totalIncome = transactions
+    .filter((t) => t.type === 'income' && t.date.startsWith(currentMonth))
+    .reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = transactions
+    .filter((t) => t.type === 'expense' && t.date.startsWith(currentMonth))
+    .reduce((sum, t) => sum + t.amount, 0);
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="space-y-6"
+      className="space-y-5"
     >
-      {/* HEADER SECTION: Search Bar, Filters & Action Button */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
+      {/* 1. FILTER CONTROLS */}
+      <div className="saas-card p-4 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Transaction History</h2>
-            <p className="text-xs text-slate-500 mt-1">Search, filter, and adjust your income and expense logs</p>
+            <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">Transaction Logs</h2>
+            <p className="text-[10px] text-slate-500 mt-0.5">Filter, search, and export your personal ledger data</p>
           </div>
-          <button
-            onClick={openAddTransaction}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white rounded-xl text-sm font-semibold shadow-md shadow-brand-500/10 transition-all duration-200"
-          >
-            <FiPlus className="w-4 h-4" />
-            Add Transaction
-          </button>
+          
+          <div className="flex gap-2">
+            {/* Export Dropdown buttons */}
+            <button
+              onClick={exportToCSV}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-800 hover:bg-slate-55 dark:hover:bg-slate-900 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-350 transition-colors"
+            >
+              <FiDownload className="w-3.5 h-3.5" />
+              CSV
+            </button>
+            <button
+              onClick={exportToPDF}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-800 hover:bg-slate-55 dark:hover:bg-slate-900 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-350 transition-colors"
+            >
+              <FiPrinter className="w-3.5 h-3.5" />
+              PDF Report
+            </button>
+            <button
+              onClick={openAddTransaction}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 rounded-lg text-xs font-semibold shadow transition-all duration-150"
+            >
+              <FiPlus className="w-3.5 h-3.5" />
+              Add Record
+            </button>
+          </div>
         </div>
 
-        {/* SEARCH AND FILTERS ROW */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-          
-          {/* Simple Search Input */}
+        {/* Filters and Search Inputs */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-              <FiSearch className="w-4 h-4" />
+              <FiSearch className="w-3.5 h-3.5" />
             </div>
             <input
               type="text"
               value={searchTerm}
-              onChange={handleSearchChange}
-              placeholder="Search by title..."
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+              placeholder="Search details..."
+              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           </div>
 
-          {/* Category Dropdown Filter */}
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-              <FiFilter className="w-4 h-4" />
+              <FiFilter className="w-3.5 h-3.5" />
             </div>
             <select
               value={selectedCategory}
-              onChange={handleCategoryChange}
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 appearance-none"
+              onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
+              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white text-xs focus:outline-none appearance-none"
             >
               {categories.map((cat) => (
                 <option key={cat} value={cat}>
@@ -138,121 +186,84 @@ export const Transactions = () => {
             </select>
           </div>
 
-          {/* Type Toggle Buttons (All, Income, Expenses) */}
-          <div className="flex bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-1 rounded-xl sm:col-span-2">
+          <div className="flex bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-0.5 rounded-lg sm:col-span-2">
             {['All', 'income', 'expense'].map((type) => (
               <button
                 key={type}
-                onClick={() => handleTypeChange(type)}
-                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all duration-200 ${
+                onClick={() => { setSelectedType(type); setCurrentPage(1); }}
+                className={`flex-1 py-1 rounded-md text-[10px] font-bold uppercase transition-all ${
                   selectedType === type
-                    ? 'bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400 shadow-sm'
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
                 }`}
               >
-                {type === 'All' ? 'All' : type}
+                {type === 'All' ? 'All Types' : type}
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* TRANSACTION LIST TABLE CARD */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+      {/* 2. TRANSACTION TABLE */}
+      <div className="saas-card p-4">
         {paginatedTxs.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-sm text-slate-500">No transactions match your search criteria.</p>
-            {(searchTerm || selectedCategory !== 'All' || selectedType !== 'All') && (
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedCategory('All');
-                  setSelectedType('All');
-                }}
-                className="mt-3 text-xs text-brand-650 dark:text-brand-400 underline font-semibold hover:text-brand-500"
-              >
-                Clear filters
-              </button>
-            )}
+          <div className="text-center py-12 text-xs text-slate-500">
+            No matching transactions found.
           </div>
         ) : (
-          <div className="space-y-6">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+          <div className="space-y-4">
+            <div className="overflow-x-auto thin-scrollbar">
+              <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="border-b border-slate-150 dark:border-slate-850 text-xs font-bold uppercase text-slate-400 tracking-wider">
-                    <th className="pb-3 pl-2">Description</th>
-                    <th className="pb-3">Category</th>
-                    <th className="pb-3">Payment Method</th>
-                    <th className="pb-3">Date</th>
-                    <th className="pb-3 text-right">Amount</th>
-                    <th className="pb-3 text-right pr-2">Actions</th>
+                  <tr className="border-b border-slate-150 dark:border-slate-800 text-[10px] font-bold uppercase text-slate-400">
+                    <th className="pb-2 pl-1">Description</th>
+                    <th className="pb-2">Category</th>
+                    <th className="pb-2">Method</th>
+                    <th className="pb-2">Date</th>
+                    <th className="pb-2 text-right">Amount</th>
+                    <th className="pb-2 text-right pr-1">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
                   {paginatedTxs.map((tx) => (
-                    <tr key={tx.id} className="hover:bg-slate-55/30 dark:hover:bg-slate-800/10 transition-colors">
-                      {/* Title & Notes */}
-                      <td className="py-3.5 pl-2 max-w-[200px] truncate">
-                        <p className="font-semibold text-slate-900 dark:text-white leading-tight">
-                          {tx.title}
-                        </p>
-                        {tx.notes && (
-                          <p className="text-[10px] text-slate-400 mt-1 truncate" title={tx.notes}>
-                            {tx.notes}
-                          </p>
-                        )}
+                    <tr key={tx.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/10">
+                      <td className="py-2.5 pl-1 max-w-[180px] truncate">
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-bold text-slate-900 dark:text-white truncate">{tx.title}</p>
+                          {tx.isRecurring && (
+                            <FiRepeat className="w-3 h-3 text-brand-500 animate-pulse shrink-0" title="Recurring Automated Transaction" />
+                          )}
+                        </div>
+                        {tx.notes && <p className="text-[9px] text-slate-400 truncate mt-0.5">{tx.notes}</p>}
                       </td>
-
-                      {/* Category Badge */}
-                      <td className="py-3.5">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-105 dark:bg-slate-800 text-slate-650 dark:text-slate-300 text-xs rounded-full font-medium">
-                          <FiTag className="w-3 h-3 text-slate-400" />
+                      <td className="py-2.5">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-655 dark:text-slate-350 rounded-full font-medium text-[10px]">
+                          <FiTag className="w-2.5 h-2.5 text-slate-400" />
                           {tx.category}
                         </span>
                       </td>
-
-                      {/* Payment Method */}
-                      <td className="py-3.5 text-slate-500 dark:text-slate-455 text-xs font-medium">
-                        {tx.paymentMethod}
+                      <td className="py-2.5 text-slate-500">{tx.paymentMethod}</td>
+                      <td className="py-2.5 text-slate-500">
+                        {new Date(tx.date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
                       </td>
-
-                      {/* Date */}
-                      <td className="py-3.5 text-slate-550 text-xs">
-                        {new Date(tx.date).toLocaleDateString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric'
-                        })}
-                      </td>
-
-                      {/* Amount */}
-                      <td className="py-3.5 text-right font-bold text-base">
-                        <span
-                          className={
-                            tx.type === 'income'
-                              ? 'text-emerald-600 dark:text-emerald-400'
-                              : 'text-rose-600 dark:text-rose-400'
-                          }
-                        >
-                          {tx.type === 'income' ? '+' : '-'}₹{tx.amount.toLocaleString('en-IN')}
+                      <td className="py-2.5 text-right font-extrabold text-sm">
+                        <span className={tx.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>
+                          {tx.type === 'income' ? '+' : '-'}{currency}{tx.amount.toLocaleString('en-IN')}
                         </span>
                       </td>
-
-                      {/* Action buttons (Edit & Delete) */}
-                      <td className="py-3.5 text-right pr-2">
-                        <div className="flex items-center justify-end gap-1">
+                      <td className="py-2.5 text-right pr-1">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => openEditTransaction(tx.id)}
-                            className="p-1.5 text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                            title="Edit entry"
+                            className="p-1 text-slate-400 hover:text-slate-950 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
+                            title="Edit"
                           >
                             <FiEdit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => deleteTransaction(tx.id)}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-lg transition-colors"
-                            title="Delete entry"
+                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded transition-colors"
+                            title="Delete"
                           >
                             <FiTrash2 className="w-3.5 h-3.5" />
                           </button>
@@ -264,30 +275,24 @@ export const Transactions = () => {
               </table>
             </div>
 
-            {/* SIMPLE PAGINATION BAR */}
+            {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
-                <span className="text-xs text-slate-500 font-medium">
-                  Showing page {currentPage} of {totalPages} ({filteredTxs.length} items total)
-                </span>
-                
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-500 font-bold">
+                <span>Page {currentPage} of {totalPages} ({filteredTxs.length} items)</span>
                 <div className="flex items-center gap-1">
-                  {/* Previous Button */}
                   <button
                     onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                     disabled={currentPage === 1}
-                    className="p-2 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-950 rounded-xl text-slate-600 dark:text-slate-400 disabled:opacity-40 disabled:hover:bg-transparent transition-all"
+                    className="p-1.5 border border-slate-200 dark:border-slate-850 hover:bg-slate-55 dark:hover:bg-slate-950 rounded disabled:opacity-40"
                   >
-                    <FiChevronLeft className="w-4 h-4" />
+                    <FiChevronLeft className="w-3.5 h-3.5" />
                   </button>
-
-                  {/* Next Button */}
                   <button
                     onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                     disabled={currentPage === totalPages}
-                    className="p-2 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-950 rounded-xl text-slate-600 dark:text-slate-400 disabled:opacity-40 disabled:hover:bg-transparent transition-all"
+                    className="p-1.5 border border-slate-200 dark:border-slate-850 hover:bg-slate-55 dark:hover:bg-slate-950 rounded disabled:opacity-40"
                   >
-                    <FiChevronRight className="w-4 h-4" />
+                    <FiChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -296,7 +301,89 @@ export const Transactions = () => {
         )}
       </div>
 
-      {/* Unified Add/Edit Form Modal */}
+      {/* 3. HIDDEN PRINT CONTAINER (Rendered only on window.print()) */}
+      <div id="spendwise-print-report" className="hidden print:block p-8 space-y-6">
+        <div className="flex justify-between items-start border-b pb-4">
+          <div>
+            <h1 className="text-2xl font-black text-slate-950">SpendWise Report</h1>
+            <p className="text-xs text-slate-500 mt-1">Generated: {new Date().toLocaleDateString()} | User: {user?.email}</p>
+          </div>
+          <div className="text-right">
+            <span className="text-xs uppercase font-bold text-slate-400">Health Rating</span>
+            <p className="text-lg font-black text-slate-900">{health.score}/100 ({health.rating})</p>
+          </div>
+        </div>
+
+        {/* Print Summary Metrics */}
+        <div className="grid grid-cols-3 gap-4 border p-4 rounded-xl bg-slate-50/20">
+          <div>
+            <span className="text-[10px] text-slate-400 uppercase font-bold">Income ({currentMonthName})</span>
+            <p className="text-base font-bold text-emerald-600">+{currency}{totalIncome.toLocaleString('en-IN')}</p>
+          </div>
+          <div>
+            <span className="text-[10px] text-slate-400 uppercase font-bold">Expenses ({currentMonthName})</span>
+            <p className="text-base font-bold text-rose-600">-{currency}{totalExpenses.toLocaleString('en-IN')}</p>
+          </div>
+          <div>
+            <span className="text-[10px] text-slate-400 uppercase font-bold">Net Savings</span>
+            <p className="text-base font-bold text-slate-900">
+              {totalIncome - totalExpenses >= 0 ? '+' : ''}{currency}{(totalIncome - totalExpenses).toLocaleString('en-IN')}
+            </p>
+          </div>
+        </div>
+
+        {/* Print Health Score Factors */}
+        <div>
+          <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">Health Score Checklist</h3>
+          <div className="border rounded-xl divide-y">
+            {health.factors.map((f) => (
+              <div key={f.id} className="p-2.5 flex justify-between items-center text-xs">
+                <div>
+                  <p className="font-bold">{f.label}</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">{f.desc}</p>
+                </div>
+                <span className={`font-bold ${f.pass ? 'text-emerald-600' : 'text-slate-400'}`}>
+                  {f.pass ? '✓ Healthy' : '✗ Weak'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Print Transaction Log Table */}
+        <div>
+          <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">Ledger Details ({filteredTxs.length} items)</h3>
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="border-b-2 pb-2 text-[10px] font-bold uppercase text-slate-400">
+                <th className="pb-2">Description</th>
+                <th className="pb-2">Category</th>
+                <th className="pb-2">Date</th>
+                <th className="pb-2 text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {filteredTxs.map((tx) => (
+                <tr key={tx.id}>
+                  <td className="py-2">
+                    <p className="font-bold text-slate-900">{tx.title}</p>
+                    <p className="text-[9px] text-slate-400">{tx.paymentMethod}</p>
+                  </td>
+                  <td className="py-2">{tx.category}</td>
+                  <td className="py-2">{new Date(tx.date).toLocaleDateString()}</td>
+                  <td className="py-2 text-right font-bold">
+                    <span className={tx.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}>
+                      {tx.type === 'income' ? '+' : '-'}{currency}{tx.amount.toLocaleString('en-IN')}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Unified form modal */}
       <TransactionModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
