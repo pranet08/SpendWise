@@ -18,39 +18,40 @@ export const Navbar = () => {
   const location = useLocation();
   const [showNotifications, setShowNotifications] = useState(false);
 
-  // Derive page heading name based on current URL path
-  const getPageTitle = () => {
+  // Derive page heading name and description based on current URL path
+  const getPageTitleAndDesc = () => {
     switch (location.pathname) {
       case '/':
-        return 'Dashboard';
+        return { title: 'Dashboard', desc: 'See your finances at a glance.' };
       case '/transactions':
-        return 'Transactions';
+        return { title: 'Transactions', desc: 'Track and manage your transactions.' };
       case '/analytics':
-        return 'Analytics & Reports';
+        return { title: 'Analytics', desc: 'Understand your spending habits.' };
       case '/budget':
-        return 'Budget Planner';
+        return { title: 'Budget', desc: 'Stay within your monthly budget.' };
       case '/savings':
-        return 'Savings Tracker';
+        return { title: 'Savings', desc: 'Monitor progress toward your savings goals.' };
       case '/settings':
-        return 'Settings';
+        return { title: 'Settings', desc: 'Manage your account preferences.' };
       default:
-        return 'Dashboard';
+        return { title: 'Dashboard', desc: 'See your finances at a glance.' };
     }
   };
 
+  const pageInfo = getPageTitleAndDesc();
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between w-full h-14 px-4 bg-white/95 dark:bg-slate-950/95 backdrop-blur border-b border-slate-200 dark:border-slate-900 transition-colors">
+    <header className="sticky top-0 z-30 flex items-center justify-between w-full h-14 px-4 bg-white/95 dark:bg-slate-950/95 backdrop-blur border-b border-slate-200 dark:border-slate-900 transition-colors no-print">
       
-      {/* LEFT: Page Title */}
+      {/* LEFT: Page Title & Contextual Description */}
       <div className="flex items-center gap-4">
         <div>
-          <h1 className="text-sm font-bold text-slate-900 dark:text-white leading-none">
-            {getPageTitle()}
+          <h1 className="text-xs font-extrabold text-slate-900 dark:text-white leading-none uppercase tracking-wider">
+            {pageInfo.title}
           </h1>
-          <p className="hidden md:block text-[10px] text-slate-500 mt-0.5">
-            Personal Finance Tracker
+          <p className="hidden md:block text-[9px] text-slate-500 mt-1 font-semibold">
+            {pageInfo.desc}
           </p>
         </div>
       </div>
@@ -93,7 +94,7 @@ export const Navbar = () => {
               />
               <div className="absolute right-0 mt-2 w-72 md:w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-lg z-50 overflow-hidden divide-y divide-slate-150 dark:divide-slate-850">
                 <div className="p-3 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
-                  <h3 className="font-semibold text-slate-900 dark:text-white text-xs">Alerts & Messages</h3>
+                  <h3 className="font-semibold text-slate-900 dark:text-white text-xs">Alerts</h3>
                   {notifications.length > 0 && (
                     <button 
                       onClick={() => {
@@ -108,14 +109,14 @@ export const Navbar = () => {
                 </div>
                 <div className="max-h-60 overflow-y-auto thin-scrollbar">
                   {notifications.length === 0 ? (
-                    <div className="p-4 text-center text-[11px] text-slate-500">
-                      No notifications at the moment.
+                    <div className="p-4 text-center text-[10px] text-slate-500 font-semibold">
+                      No notifications.
                     </div>
                   ) : (
                     notifications.map((note) => (
                       <div 
                         key={note.id} 
-                        className={`p-3 flex gap-2 items-start hover:bg-slate-50 dark:hover:bg-slate-950 transition-colors ${
+                        className={`p-3 flex gap-2 items-start hover:bg-slate-55 dark:hover:bg-slate-950 transition-colors ${
                           !note.read ? 'bg-slate-50/50 dark:bg-slate-900/30' : ''
                         }`}
                       >
@@ -129,10 +130,10 @@ export const Navbar = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-1">
-                            <p className="text-[11px] font-bold text-slate-950 dark:text-slate-50 leading-tight">
+                            <p className="text-[10px] font-bold text-slate-950 dark:text-slate-50 leading-tight">
                               {note.title}
                             </p>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1.5">
                               {!note.read && (
                                 <button
                                   onClick={() => markNotificationAsRead(note.id)}
@@ -151,10 +152,10 @@ export const Navbar = () => {
                               </button>
                             </div>
                           </div>
-                          <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-normal">
+                          <p className="text-[9px] text-slate-550 dark:text-slate-400 mt-0.5 leading-normal font-semibold">
                             {note.desc}
                           </p>
-                          <span className="text-[8px] text-slate-400 block mt-1">
+                          <span className="text-[7.5px] text-slate-400 block mt-1 font-bold">
                             {new Date(note.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
@@ -170,7 +171,7 @@ export const Navbar = () => {
         {/* Vertical divider */}
         <div className="h-4 w-px bg-slate-200 dark:bg-slate-800" />
 
-        {/* User profile indicator */}
+        {/* User profile avatar */}
         {user && (
           <div className="flex items-center gap-2 select-none">
             <img
@@ -178,7 +179,7 @@ export const Navbar = () => {
               alt={user.name}
               className="w-6 h-6 rounded-md object-cover ring-1 ring-slate-200 dark:ring-slate-800"
             />
-            <span className="hidden md:block text-[11px] font-semibold text-slate-700 dark:text-slate-350 truncate max-w-[80px]">
+            <span className="hidden md:block text-[10px] font-bold text-slate-700 dark:text-slate-350 uppercase tracking-wide truncate max-w-[80px]">
               {user.name}
             </span>
           </div>

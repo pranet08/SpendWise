@@ -6,11 +6,9 @@ import {
   FiMail, 
   FiTrash2, 
   FiRefreshCw, 
-  FiKey, 
   FiDollarSign, 
   FiDownloadCloud, 
-  FiUploadCloud,
-  FiLink
+  FiUploadCloud
 } from 'react-icons/fi';
 
 export const Settings = () => {
@@ -18,8 +16,6 @@ export const Settings = () => {
     user, 
     updateProfile, 
     resetAllData, 
-    geminiApiKey, 
-    setGeminiApiKey,
     currency,
     setCurrency,
     transactions,
@@ -36,7 +32,6 @@ export const Settings = () => {
   // Local form states
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
-  const [apiKeyInput, setApiKeyInput] = useState(geminiApiKey);
 
   // Available avatars
   const avatarOptions = [
@@ -56,13 +51,6 @@ export const Settings = () => {
       return;
     }
     updateProfile(name.trim(), email.trim(), selectedAvatar);
-  };
-
-  // Save Gemini Key
-  const handleSaveApiKey = (e) => {
-    e.preventDefault();
-    setGeminiApiKey(apiKeyInput.trim());
-    showToast('Gemini API Key updated successfully.', 'success');
   };
 
   // JSON Data Backup Export Helper
@@ -169,7 +157,7 @@ export const Settings = () => {
               <FiUser className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Profile Settings</h3>
+              <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">My Profile</h3>
               <p className="text-[10px] text-slate-500 mt-0.5">Manage your personal profile information</p>
             </div>
           </div>
@@ -179,7 +167,7 @@ export const Settings = () => {
             {/* Avatar picker */}
             <div className="space-y-2">
               <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                Choose Profile Photo
+                Profile Picture
               </label>
               <div className="flex items-center gap-4">
                 <img
@@ -247,7 +235,7 @@ export const Settings = () => {
               type="submit"
               className="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 rounded-lg text-[10px] font-bold uppercase shadow transition-colors"
             >
-              Save Profile Changes
+              Save
             </button>
           </form>
         </div>
@@ -259,7 +247,7 @@ export const Settings = () => {
               <FiDollarSign className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Preferences</h3>
+              <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">App Preferences</h3>
               <p className="text-[10px] text-slate-500 mt-0.5">Adjust dashboard formatting rules</p>
             </div>
           </div>
@@ -267,7 +255,7 @@ export const Settings = () => {
           <div className="space-y-4">
             <div>
               <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                Base Currency Symbol
+                Currency
               </label>
               <select
                 value={currency}
@@ -285,52 +273,14 @@ export const Settings = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         
-        {/* Gemini AI Settings Card */}
-        <div className="saas-card p-5 lg:col-span-2">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg">
-              <FiKey className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Gemini API Key</h3>
-              <p className="text-[10px] text-slate-500 mt-0.5">Integrate Google Gemini API to explain calculated metrics</p>
-            </div>
-          </div>
-
-          <form onSubmit={handleSaveApiKey} className="space-y-4">
-            <div>
-              <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                API Developer Key
-              </label>
-              <input
-                type="password"
-                value={apiKeyInput}
-                onChange={(e) => setApiKeyInput(e.target.value)}
-                placeholder="AIzaSy..."
-                className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-brand-500"
-              />
-              <p className="text-[9px] text-slate-455 mt-1">
-                Your key is stored securely in your browser's local storage and is sent only directly to the Google API endpoint.
-              </p>
-            </div>
-
-            <button
-              type="submit"
-              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 rounded-lg text-[10px] font-bold uppercase shadow transition-colors"
-            >
-              Update Gemini Key
-            </button>
-          </form>
-        </div>
-
         {/* Data Backup & Migration Center */}
-        <div className="saas-card p-5 flex flex-col justify-between">
+        <div className="saas-card p-5 lg:col-span-2 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg">
                 <FiDownloadCloud className="w-4 h-4" />
               </div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Ledger Migration</h3>
+              <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Backup & Restore</h3>
             </div>
             <p className="text-[10px] text-slate-500 leading-normal mb-4">
               Backup your entire SpendWise dashboard ledger to a local JSON file, or restore from a previous backup.
@@ -343,14 +293,14 @@ export const Settings = () => {
               className="flex items-center justify-center gap-1.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100 rounded text-[9px] font-bold uppercase transition-colors"
             >
               <FiDownloadCloud className="w-3.5 h-3.5" />
-              Backup
+              Backup Data
             </button>
             <button
               onClick={triggerFileInput}
               className="flex items-center justify-center gap-1.5 py-1.5 bg-slate-150 hover:bg-slate-200 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100 rounded text-[9px] font-bold uppercase transition-colors"
             >
               <FiUploadCloud className="w-3.5 h-3.5" />
-              Restore
+              Restore Data
             </button>
             <input
               type="file"
@@ -362,18 +312,14 @@ export const Settings = () => {
           </div>
         </div>
 
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        
-        {/* Danger zone wipe */}
-        <div className="saas-card p-5 lg:col-span-2 flex flex-col justify-between">
+        {/* Reset App Data */}
+        <div className="saas-card p-5 lg:col-span-1 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-455 rounded-lg">
                 <FiTrash2 className="w-4 h-4" />
               </div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Danger Zone</h3>
+              <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Reset App Data</h3>
             </div>
             <p className="text-[10px] text-slate-500 leading-relaxed">
               Permanently wipe all records, budgets, savings progress, and settings. This operation is non-reversible.
@@ -385,27 +331,8 @@ export const Settings = () => {
             className="w-full mt-4 py-2 border border-rose-250 hover:bg-rose-600 hover:text-white text-rose-600 dark:text-rose-400 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1.5"
           >
             <FiRefreshCw className="w-3.5 h-3.5" />
-            Reset Data Cache
+            Delete All Data
           </button>
-        </div>
-
-        {/* Future banking sync Placeholder */}
-        <div className="saas-card p-5 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-lg">
-                <FiLink className="w-4 h-4" />
-              </div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Bank account sync</h3>
-            </div>
-            <p className="text-[10px] text-slate-500 leading-normal">
-              Sync transactions automatically with open banking integrations.
-            </p>
-          </div>
-
-          <span className="w-full mt-4 py-1.5 bg-slate-100 dark:bg-slate-850 text-slate-400 rounded text-center text-[9px] font-extrabold uppercase select-none cursor-not-allowed">
-            Coming Soon (Open Banking)
-          </span>
         </div>
 
       </div>

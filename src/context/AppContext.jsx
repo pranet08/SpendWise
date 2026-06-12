@@ -626,43 +626,45 @@ export const AppProvider = ({ children }) => {
 
     const totalScore = savingsRateScore + budgetAdherenceScore + cashFlowScore + goalsScore + incomeStabilityScore + bufferScore;
     
-    // Compile factors checklist feedback
+    // Compile factors checklist feedback using user-friendly terminology
     const factors = [
       {
         id: 'savings-rate',
-        label: `Savings Rate (${savingsRate.toFixed(0)}%)`,
+        label: 'Saving Habit',
         pass: savingsRate >= 15,
-        desc: savingsRate >= 20 ? 'Excellent savings rate above 20% benchmark.' : (savingsRate >= 10 ? 'Moderate savings. Aim for at least 20%.' : 'Low or negative savings this month.')
+        desc: savingsRate >= 20 ? 'Healthy saving habit.' : 'Saving habit could be improved.'
       },
       {
         id: 'budget-adherence',
-        label: 'Budget Adherence',
+        label: 'Budget Control',
         pass: thisMonthExpenses <= monthlyBudget,
-        desc: thisMonthExpenses <= monthlyBudget ? 'Total spending is within your budget.' : `Exceeded budget limit of ${currency}${monthlyBudget.toLocaleString('en-IN')}.`
+        desc: thisMonthExpenses <= monthlyBudget ? 'Good budget control.' : 'Spending is over budget.'
       },
       {
         id: 'cash-flow',
-        label: 'Monthly Cash Flow',
+        label: 'Money Left This Month',
         pass: thisMonthIncome > thisMonthExpenses,
-        desc: thisMonthIncome > thisMonthExpenses ? 'Positive net savings flow.' : 'Negative net savings. Expenses exceed earnings.'
+        desc: thisMonthIncome > thisMonthExpenses ? 'Income exceeds expenses.' : 'Expenses exceed income.'
       },
       {
         id: 'goals-progress',
-        label: 'Goals Progression',
+        label: 'Goal Progress',
         pass: savingsGoals.length > 0 && (savingsGoals.reduce((sum, g) => sum + (g.currentSaved/g.targetAmount), 0)/savingsGoals.length >= 0.4),
-        desc: savingsGoals.length === 0 ? 'No active savings goals set.' : 'Solid progression across active goals.'
+        desc: savingsGoals.length === 0 ? 'No active goals set.' : 'Goals are progressing well.'
       },
       {
         id: 'budget-buffer',
-        label: 'Budget Utilization Buffer',
+        label: 'Budget Usage',
         pass: thisMonthExpenses <= monthlyBudget * 0.7,
-        desc: thisMonthExpenses <= monthlyBudget * 0.7 ? 'Healthy safety buffer of 30%+ remaining.' : 'Low spending buffer. Monitor your subscriptions.'
+        desc: thisMonthExpenses <= monthlyBudget * 0.7 ? 'Healthy safety buffer.' : 'Spending is too high.'
       }
     ];
 
-    let rating = 'Needs Improvement';
+    let rating = 'Poor';
     if (totalScore >= 90) rating = 'Excellent';
     else if (totalScore >= 70) rating = 'Good';
+    else if (totalScore >= 50) rating = 'Average';
+    else if (totalScore >= 30) rating = 'Needs Attention';
 
     return {
       score: Math.min(100, Math.max(0, totalScore)),

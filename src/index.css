@@ -109,3 +109,32 @@
     page-break-inside: avoid;
   }
 }
+
+/* --- Premium Spacing, Rhythm & Table Polish --- */
+
+/* Increase table row height slightly for premium readability */
+table th, table td {
+  padding-top: 0.625rem !important;
+  padding-bottom: 0.625rem !important;
+  padding-left: 0.75rem !important;
+  padding-right: 0.75rem !important;
+}
+
+/* Keep header cell alignments clean */
+table th {
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+/* Increase spacing inside cards to feel spacious and professional */
+.saas-card {
+  padding: 1.25rem !important; /* Enforces clean 20px padding (p-5) */
+}
+
+/* Adjust grid gaps for section groups */
+.gap-4 {
+  gap: 0.875rem !important;
+}
+.gap-5 {
+  gap: 1.125rem !important;
+}
