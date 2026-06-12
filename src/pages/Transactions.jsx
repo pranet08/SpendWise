@@ -19,10 +19,12 @@ import {
 
 export const Transactions = () => {
   const { 
+    user,
     transactions, 
     deleteTransaction, 
     calculateFinancialHealth, 
-    currency 
+    currency,
+    showToast
   } = useApp();
 
   // Search & Filter state
