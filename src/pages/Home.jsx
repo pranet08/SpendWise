@@ -137,19 +137,13 @@ export const Home = () => {
             Track expenses, build savings, complete challenges, and understand where your money goes—all in one place.
           </p>
 
-          <div className="flex items-center justify-center gap-3 pt-2">
+          <div className="flex items-center justify-center pt-2">
             <button
               onClick={handleStart}
               className="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold shadow-md shadow-purple-500/10 transition-all duration-300 hover:scale-[1.02] active:scale-98 flex items-center gap-1.5"
             >
               Get started
               <FiArrowRight className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={handleStart}
-              className="px-5 py-2.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-350 hover:text-slate-200 rounded-lg text-xs font-semibold transition-all duration-300"
-            >
-              View demo
             </button>
           </div>
         </motion.div>

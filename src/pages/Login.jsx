@@ -25,10 +25,10 @@ export const Login = () => {
     let submitPassword = password;
 
     if (!submitEmail) {
-      submitEmail = 'jiten@example.com';
+      submitEmail = 'demo@example.com';
     }
     if (!submitPassword) {
-      submitPassword = 'jiten@example.com';
+      submitPassword = 'demo@example.com';
     }
 
     // Validate inputs
@@ -48,14 +48,14 @@ export const Login = () => {
     // Mock Login Context Call
     const res = login(submitEmail, submitPassword);
     if (res.success) {
-      navigate('/'); // Redirect to Dashboard homepage
+      navigate('/dashboard'); // Redirect to Dashboard homepage
     }
   };
 
   // Autocomplete demo details for reviewers
   const handleQuickFill = () => {
-    setEmail('jiten@example.com');
-    setPassword('jiten@example.com');
+    setEmail('demo@example.com');
+    setPassword('demo@example.com');
     setErrors({});
   };
 
@@ -95,7 +95,7 @@ export const Login = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="jiten@example.com"
+                  placeholder="demo@example.com"
                   className={`w-full pl-10 pr-4 py-2.5 bg-slate-950/60 border rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 ${
                     errors.email ? 'border-rose-500' : 'border-slate-800'
                   }`}
@@ -117,7 +117,7 @@ export const Login = () => {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="jiten@example.com"
+                  placeholder="demo@example.com"
                   className={`w-full pl-10 pr-10 py-2.5 bg-slate-950/60 border rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 ${
                     errors.password ? 'border-rose-500' : 'border-slate-800'
                   }`}

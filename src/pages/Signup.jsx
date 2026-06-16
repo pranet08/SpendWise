@@ -48,7 +48,7 @@ export const Signup = () => {
     // Call mock signup with gender passed as well
     const res = signup(name.trim(), email.trim(), password, gender);
     if (res.success) {
-      navigate('/'); // Redirect to Dashboard homepage
+      navigate('/dashboard'); // Redirect to Dashboard homepage
     }
   };
 
