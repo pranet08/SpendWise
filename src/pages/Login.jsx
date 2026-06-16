@@ -9,8 +9,8 @@ export const Login = () => {
   const navigate = useNavigate();
 
   // Form states
-  const [email, setEmail] = useState('demo@example.com');
-  const [password, setPassword] = useState('demo@example.com');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   
   // Validation errors
