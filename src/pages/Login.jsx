@@ -9,8 +9,8 @@ export const Login = () => {
   const navigate = useNavigate();
 
   // Form states
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('demo@example.com');
+  const [password, setPassword] = useState('demo@example.com');
   const [showPassword, setShowPassword] = useState(false);
   
   // Validation errors
@@ -21,22 +21,19 @@ export const Login = () => {
     e.preventDefault();
     const newErrors = {};
 
-    let submitEmail = email.trim();
-    let submitPassword = password;
-
-    if (!submitEmail) {
-      submitEmail = 'demo@example.com';
-    }
-    if (!submitPassword) {
-      submitPassword = 'demo@example.com';
-    }
+    const submitEmail = email.trim();
+    const submitPassword = password;
 
     // Validate inputs
-    if (!/\S+@\S+\.\S+/.test(submitEmail)) {
+    if (!submitEmail) {
+      newErrors.email = 'Email address is required';
+    } else if (!/\S+@\S+\.\S+/.test(submitEmail)) {
       newErrors.email = 'Please enter a valid email address';
     }
 
-    if (submitPassword.length < 6) {
+    if (!submitPassword) {
+      newErrors.password = 'Password is required';
+    } else if (submitPassword.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
 
