@@ -21,16 +21,22 @@ export const Login = () => {
     e.preventDefault();
     const newErrors = {};
 
+    let submitEmail = email.trim();
+    let submitPassword = password;
+
+    if (!submitEmail) {
+      submitEmail = 'jiten@example.com';
+    }
+    if (!submitPassword) {
+      submitPassword = 'jiten@example.com';
+    }
+
     // Validate inputs
-    if (!email) {
-      newErrors.email = 'Email address is required';
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
+    if (!/\S+@\S+\.\S+/.test(submitEmail)) {
       newErrors.email = 'Please enter a valid email address';
     }
 
-    if (!password) {
-      newErrors.password = 'Password is required';
-    } else if (password.length < 6) {
+    if (submitPassword.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
 
@@ -40,7 +46,7 @@ export const Login = () => {
     }
 
     // Mock Login Context Call
-    const res = login(email, password);
+    const res = login(submitEmail, submitPassword);
     if (res.success) {
       navigate('/'); // Redirect to Dashboard homepage
     }
@@ -48,8 +54,8 @@ export const Login = () => {
 
   // Autocomplete demo details for reviewers
   const handleQuickFill = () => {
-    setEmail('alex.mercer@spendwise.io');
-    setPassword('demopass123');
+    setEmail('jiten@example.com');
+    setPassword('jiten@example.com');
     setErrors({});
   };
 
@@ -89,7 +95,7 @@ export const Login = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder=""
+                  placeholder="jiten@example.com"
                   className={`w-full pl-10 pr-4 py-2.5 bg-slate-950/60 border rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 ${
                     errors.email ? 'border-rose-500' : 'border-slate-800'
                   }`}
@@ -111,7 +117,7 @@ export const Login = () => {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder=""
+                  placeholder="jiten@example.com"
                   className={`w-full pl-10 pr-10 py-2.5 bg-slate-950/60 border rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 ${
                     errors.password ? 'border-rose-500' : 'border-slate-800'
                   }`}

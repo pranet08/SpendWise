@@ -19,7 +19,8 @@ import {
   FiActivity,
   FiTag,
   FiChevronRight,
-  FiInfo
+  FiInfo,
+  FiLogOut
 } from 'react-icons/fi';
 
 export const Dashboard = () => {
@@ -35,7 +36,8 @@ export const Dashboard = () => {
     editRecurringTransaction,
     geminiApiKey,
     currency,
-    showToast
+    showToast,
+    logout
   } = useApp();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -260,13 +262,22 @@ Format: Markdown, bold keywords, short lines, professional tone. No math calcula
           <h2 className="text-base font-extrabold text-slate-900 dark:text-white">Dashboard</h2>
           <p className="text-[10px] text-slate-500 mt-0.5">See your finances at a glance.</p>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 rounded-lg text-xs font-bold transition-colors shadow-sm"
-        >
-          <FiPlus className="w-3.5 h-3.5" />
-          Add Transaction
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 rounded-lg text-xs font-bold transition-colors shadow-sm"
+          >
+            <FiPlus className="w-3.5 h-3.5" />
+            Add Transaction
+          </button>
+          <button
+            onClick={logout}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
+          >
+            <FiLogOut className="w-3.5 h-3.5" />
+            Sign Out
+          </button>
+        </div>
       </div>
 
       {/* 1. SCORE CARD & SUMMARY SECTION */}
