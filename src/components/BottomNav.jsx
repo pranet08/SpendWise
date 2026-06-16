@@ -17,7 +17,7 @@ export const BottomNav = () => {
 
   // Menu items for mobile nav
   const menuItems = [
-    { name: 'Home', path: '/', icon: <FiHome className="w-5 h-5" /> },
+    { name: 'Dashboard', path: '/dashboard', icon: <FiHome className="w-5 h-5" /> },
     { name: 'History', path: '/transactions', icon: <FiCreditCard className="w-5 h-5" /> },
     { name: 'Analytics', path: '/analytics', icon: <FiPieChart className="w-5 h-5" /> },
     { name: 'Challenges', path: '/challenges', icon: <FiAward className="w-5 h-5" /> },

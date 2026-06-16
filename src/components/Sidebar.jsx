@@ -19,7 +19,7 @@ export const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const menuItems = [
-    { name: 'Dashboard', path: '/', icon: <FiHome className="w-4 h-4" /> },
+    { name: 'Dashboard', path: '/dashboard', icon: <FiHome className="w-4 h-4" /> },
     { name: 'Transactions', path: '/transactions', icon: <FiCreditCard className="w-4 h-4" /> },
     { name: 'Analytics', path: '/analytics', icon: <FiPieChart className="w-4 h-4" /> },
     { name: 'Money Challenges', path: '/challenges', icon: <FiAward className="w-4 h-4" /> },

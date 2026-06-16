@@ -1,5 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { Home } from './pages/Home';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { Dashboard } from './pages/Dashboard';
@@ -18,7 +19,8 @@ function App() {
   return (
     <>
       <Routes>
-        {/* 1. Public Authentication Routes (Auth layouts) */}
+        {/* 1. Public Routes */}
+        <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
@@ -39,7 +41,7 @@ function App() {
                   {/* Dynamic Scrollable Body Content */}
                   <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 lg:pb-6">
                     <Routes>
-                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/transactions" element={<Transactions />} />
                       <Route path="/analytics" element={<Analytics />} />
                       <Route path="/challenges" element={<MoneyChallenges />} />
@@ -47,7 +49,7 @@ function App() {
                       <Route path="/settings" element={<Settings />} />
                       
                       {/* Wildcard redirect back to root dashboard */}
-                      <Route path="*" element={<Navigate to="/" replace />} />
+                      <Route path="*" element={<Navigate to="/dashboard" replace />} />
                     </Routes>
                   </main>
 

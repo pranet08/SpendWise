@@ -21,7 +21,7 @@ export const Navbar = () => {
   // Derive page heading name and description based on current URL path
   const getPageTitleAndDesc = () => {
     switch (location.pathname) {
-      case '/':
+      case '/dashboard':
         return { title: 'Dashboard', desc: 'See your finances at a glance.' };
       case '/transactions':
         return { title: 'Transactions', desc: 'Track and manage your transactions.' };
